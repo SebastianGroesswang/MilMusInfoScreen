@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import { Button, Input, TextField } from '@mui/material';
 import { db } from "./firebase_setup/firebase";
-import { onValue, ref, set } from "firebase/database";
+import { onValue, ref, set, remove } from "firebase/database";
 import React, { useEffect, useState } from 'react';
 import {uid} from 'uid'
 import { AiFillDelete } from 'react-icons/ai'
@@ -21,6 +21,7 @@ function App() {
     set(ref(db, `/${uuid}`), {
       pTitle,
       pMessage,
+      postedOn : Date.now(),
       uuid
     });
 
@@ -33,6 +34,11 @@ function App() {
 
     setMessage('');
     setTitle('');
+
+    if(messageList.length > 6){
+      var msg = messageList.sort((a,b) => a.postedOn > b.postedOn ? 1 : -1)[0]
+      remove(ref(db, `/${msg.uuid}`));
+    }
   }
 
   useEffect(() => {
@@ -81,7 +87,7 @@ function App() {
       justifyContent:'center'
       }}>
 
-      {messageList.map((msg) => (
+      {messageList.sort((a,b) => a.postedOn < b.postedOn ? 1 : -1).map((msg) => (
         <div style={{
           borderWidth: 'medium',
           borderStyle: 'dashed',
@@ -105,7 +111,9 @@ function App() {
               {msg.pMessage}
             </div>
             
-            <Button variant='outlined'>
+            <Button variant='outlined' onClick={() => {
+              remove(ref(db, `/${msg.uuid}`));
+            }}>
               <AiFillDelete/>
             </Button>
             

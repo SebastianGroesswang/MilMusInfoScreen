@@ -10,7 +10,8 @@ import PictureSlides from './components/PictureSlides';
 import { Button } from '@mui/material';
 import { MdDownloading } from 'react-icons/md'
 import ImageSlide from './components/ImageSlide';
-
+import ShowCurrentRoster from './components/ShowCurrentRoster';
+import ShowMessages from './components/ShowMessages';
 
 function App() {
   //state for the tabs
@@ -19,6 +20,7 @@ function App() {
   //state for the image getting process
   const [images, setImages] = useState([]);
   const [imageLoad, setImageLoad] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
 
   //get the images
   useEffect(() => {
@@ -45,7 +47,7 @@ function App() {
               img = new Image();
               img.onload = fExists;
               img.onerror = fDoesntExist;
-              img.src = 'http://192.168.0.23:8887/image' + i + '.jpg';
+              img.src = 'http://192.168.0.120:8000/image' + i + '.jpg';
           }
       }
         
@@ -62,7 +64,7 @@ function App() {
       function fDoesntExist() {
           setImages([...imgArray,]);
           setImageLoad(true);
-          console.log('not valid')
+          console.log(imgArray)
           bFinishCheck = true;
       }
     }, [])
@@ -81,10 +83,11 @@ function App() {
               <TabList onChange={handleChange} aria-label="lab API tabs example">
                 <Tab label="Bilder" value="1" />
                 <Tab label="Infos" value="2" />
+                <Tab label="Dienstplan" value="3" />
               </TabList>
             </Box>
             <TabPanel value="1">
-              <ImageSlide images={images} ></ImageSlide>
+              <ImageSlide images={images} imageIndex={imageIndex} setImageIndex={setImageIndex}></ImageSlide>
             </TabPanel>
             <TabPanel value="2" 
             /**
@@ -98,7 +101,10 @@ function App() {
              * 
              * preffered way a second independent app maybe even a website too.. send informations over a browser
             */>
-              Comming soon....
+              <ShowMessages></ShowMessages>
+            </TabPanel>
+            <TabPanel value="3">
+              <ShowCurrentRoster></ShowCurrentRoster>
             </TabPanel>
           </TabContext>
         </Box>
