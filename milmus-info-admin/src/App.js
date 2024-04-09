@@ -7,8 +7,19 @@ import React, { useEffect, useState } from 'react';
 import {uid} from 'uid'
 import { AiFillDelete } from 'react-icons/ai'
 import { FaPlus } from "react-icons/fa";
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
+const getTextDecoration = (value) => {
+  return dayjs().isAfter(dayjs(value.date, "MM-DD-YYYY")) && dayjs().date() != dayjs(value.date, "MM-DD-YYYY").date() ? "line-through" : "none"
+}
 
 function App() {
+  var customParseFormat = require('dayjs/plugin/customParseFormat')
+  dayjs.extend(customParseFormat)
+
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -19,9 +30,9 @@ function App() {
   const [additionalThingsForConcert, setAdditionalThingsForConcert] = useState('')
   const [standingConcert, setStandingConcert] = useState(false)
   const [militaryReception, setMilitaryReception] = useState(true)
-  const [choralMilitaryReception, setChoralMilitaryReception] = useState('')
-  const [marchesMilitaryReception, setMarchesMilitaryReception] = useState('')
   const [listOfProgramm, setListOfProgramm] = useState([]);
+  const [whiteBelt, setWhiteBelt] = useState(false);
+  const [date, setDate] = useState(dayjs());
 
   const writeMessage = () => {
     console.log('test')
@@ -31,12 +42,14 @@ function App() {
       case 'Konzert':
         set(ref(db, `/${uuid}`), {
           title,
+          date : date.format("MM-DD-YYYY"),
           kindOfConcert,
           standingConcert,
           listOfProgramm,
           clothesOfConcert,
           additionalThingsForConcert,
           message,
+          whiteBelt,
           postedOn : Date.now(),
           uuid
         });
@@ -44,11 +57,13 @@ function App() {
       case 'Militärische Ausrückung':
         set(ref(db, `/${uuid}`), {
           title,
+          date : date.format("MM-DD-YYYY"),
           kindOfConcert,
           militaryReception,
           listOfProgramm,
           clothesOfConcert,
           message,
+          whiteBelt,
           postedOn : Date.now(),
           uuid
         });
@@ -57,6 +72,7 @@ function App() {
 
         set(ref(db, `/${uuid}`), {
           title,
+          date : date.format("MM-DD-YYYY"),
           kindOfConcert,
           message,
           postedOn : Date.now(),
@@ -73,7 +89,6 @@ function App() {
   
   const resetFields = () => {
     setAdditionalThingsForConcert('')
-    setChoralMilitaryReception('')
     setMessage('')
     setTitle('')
     setProgrammOfConcert('')
@@ -98,6 +113,56 @@ function App() {
     setKindOfConcert(event.target.value);
     console.log('change')
   };
+
+  const showClothes = () => {
+    return <div>
+        <div style={{
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'center',
+        marginLeft: '10%',
+        marginRight: '10%',
+        marginTop: '2%',
+        }}>
+        <FormControl fullWidth>
+          <InputLabel id='kind_of_concert_clothes_label'>Adjustierung</InputLabel>
+          <Select
+            labelId='kind_of_concert_clothes_label'
+            id='kind_of_concert_clothes_select'
+            label='Adjustierung'
+            value={clothesOfConcert}
+            onChange={(event) => setClothesOfConcert(event.target.value) }
+          >
+            <MenuItem value={'Gala'}>Gala</MenuItem>
+            <MenuItem value={'A-Garnitur'}>A-Garnitur</MenuItem>
+            <MenuItem value={'TAz'}>TAz</MenuItem>
+            <MenuItem value={'TAz + Regenjacke'}>TAz + Regenjacke</MenuItem>
+            <MenuItem value={'TAz + Schwere Jacke'}>TAz + Schwere Jacke</MenuItem>
+          </Select>
+        </FormControl>
+      </div>
+      <div style={{
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'center',
+        marginLeft: '10%',
+        marginRight: '10%',
+        marginTop: '2%',
+      }}>
+        
+        <FormGroup>
+          <FormControlLabel 
+            control={
+              <Checkbox
+                checked={whiteBelt}
+                onChange={(event) => setWhiteBelt(event.target.checked)}
+              />}
+            label="Weißes Riemenzeug"
+          />
+        </FormGroup>
+      </div>
+    </div>
+  }
 
   const showProgramm = () => {
     return <div>
@@ -153,33 +218,7 @@ function App() {
           return <div>
 
             {showProgramm()};
-
-            
-            <div style={{
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              marginLeft: '10%',
-              marginRight: '10%',
-              marginTop: '2%',
-              }}>
-              <FormControl fullWidth>
-                <InputLabel id='kind_of_concert_clothes_label'>Adjustierung</InputLabel>
-                <Select
-                  labelId='kind_of_concert_clothes_label'
-                  id='kind_of_concert_clothes_select'
-                  label='Adjustierung'
-                  value={clothesOfConcert}
-                  onChange={(event) => setClothesOfConcert(event.target.value) }
-                >
-                  <MenuItem value={'Gala'}>Gala</MenuItem>
-                  <MenuItem value={'A-Garnitur'}>A-Garnitur</MenuItem>
-                  <MenuItem value={'Katz03'}>Katz03</MenuItem>
-                  <MenuItem value={'Katz03 + Regenjacke'}>Katz03 + Regenjacke</MenuItem>
-                  <MenuItem value={'Katz03 + Schwere Jacke'}>Katz03 + Schwere Jacke</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
+            {showClothes()};
 
             <div style={{
               display:'flex',
@@ -187,8 +226,6 @@ function App() {
               justifyContent:'center',
               marginLeft: '10%',
               marginRight: '10%',
-              marginTop: '2%',
-              marginBottom: '20px'
               }}>
               <FormGroup>
                 <FormControlLabel 
@@ -241,32 +278,7 @@ function App() {
 
             {showProgramm()}
 
-            <div style={{
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              marginLeft: '10%',
-              marginRight: '10%',
-              marginTop: '2%',
-              marginBottom: '20px'
-              }}>
-              <FormControl fullWidth>
-                <InputLabel id='kind_of_concert_clothes_label'>Adjustierung</InputLabel>
-                <Select
-                  labelId='kind_of_concert_clothes_label'
-                  id='kind_of_concert_clothes_select'
-                  label='Adjustierung'
-                  value={clothesOfConcert}
-                  onChange={(event) => setClothesOfConcert(event.target.value) }
-                >
-                  <MenuItem value={'Gala'}>Gala</MenuItem>
-                  <MenuItem value={'A-Garnitur'}>A-Garnitur</MenuItem>
-                  <MenuItem value={'Katz03'}>Katz03</MenuItem>
-                  <MenuItem value={'Katz03 + Regenjacke'}>Katz03 + Regenjacke</MenuItem>
-                  <MenuItem value={'Katz03 + Schwere Jacke'}>Katz03 + Schwere Jacke</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
+            {showClothes()}
           </div>
         case 'Info':
           return <div>
@@ -330,6 +342,22 @@ function App() {
         <Button variant='outlined' style={{width: '10%', minHeight: '56px'}} onClick={pushSend} disabled={title === ''}>Send</Button>
       </div>
     
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <div style={{
+          display:'flex',
+          alignItems:'center',
+          justifyContent:'center',
+          marginLeft: '10%',
+          marginRight: '10%',
+          marginBottom: '20px',
+          marginTop: '2%'
+        }}
+        >
+          Datum der Ausrückung:
+          <DatePicker label="Datum" value={date} onChange={(newValue) => setDate(newValue)} format="DD.MM.YYYY" sx={{marginLeft: "20px"}}/>
+        </div>
+      </LocalizationProvider>
+
     {renderSwitch(kindOfConcert)}
     
     <div style={{
@@ -338,7 +366,8 @@ function App() {
       justifyContent:'center',
       marginLeft: '10%',
       marginRight: '10%',
-      marginBottom: '20px'
+      marginBottom: '20px',
+      marginTop: '2%'
     }}
     >
       <TextField placeholder='Zusätzliche Informationen' variant='outlined' fullWidth multiline minRows={3} style={{width:'100%'}} value={message} onChange={(e) => setMessage(e.target.value)}></TextField>
@@ -359,7 +388,8 @@ function App() {
           margin: '5px',
           marginLeft: '10%',
           marginRight: '10%',
-          textAlign: 'center'
+          textAlign: 'center',
+          textDecoration : getTextDecoration(msg)
         }}>
           <div
             style={{
@@ -375,7 +405,7 @@ function App() {
               <div style={{
                     fontSize: '30px'
                 }}>
-                    {msg.title}
+                    {dayjs(msg.date, "MM-DD-YYYY").format("DD.MM.YYYY")} - {msg.title}
                 </div>
               {msg.message}
               {msg.kindOfConcert}
