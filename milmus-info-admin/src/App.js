@@ -5,7 +5,7 @@ import { db } from "./firebase_setup/firebase";
 import { onValue, ref, set, remove } from "firebase/database";
 import React, { useEffect, useState } from 'react';
 import {uid} from 'uid'
-import { AiFillDelete } from 'react-icons/ai'
+import { AiFillDelete, AiOutlineSave ,AiTwotoneEdit, AiFillCloseCircle } from 'react-icons/ai'
 import { FaPlus } from "react-icons/fa";
 import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -33,6 +33,7 @@ function App() {
   const [listOfProgramm, setListOfProgramm] = useState([]);
   const [whiteBelt, setWhiteBelt] = useState(false);
   const [date, setDate] = useState(dayjs());
+  const [editMode, setEditMode] = useState(false);
 
   const writeMessage = () => {
     console.log('test')
@@ -81,10 +82,6 @@ function App() {
 
         return
     }
-
-    
-
-    console.log('sending')
   }
   
   const resetFields = () => {
@@ -93,6 +90,7 @@ function App() {
     setTitle('')
     setProgrammOfConcert('')
     setListOfProgramm([])
+    setDate(dayjs())
   }
 
   const pushSend = () => {
@@ -105,6 +103,14 @@ function App() {
       var msg = messageList.sort((a,b) => a.postedOn > b.postedOn ? 1 : -1)[0]
       remove(ref(db, `/${msg.uuid}`));
     }
+  }
+
+  const pushSave = (id) => {
+
+  }
+
+  const pushCancel = () => {
+
   }
 
   const handleSelectChange = (event) => {
@@ -311,6 +317,21 @@ function App() {
       justifyContent:'center'
       }}
       >
+
+    <div style={{
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'center',
+        marginLeft: '10%',
+        marginRight: '10%',
+        marginTop: '5%',
+        marginBottom: '20px'
+        }}
+      >
+        Test
+
+      </div>
+
       <div style={{
         display:'flex',
         alignItems:'center',
@@ -321,6 +342,8 @@ function App() {
         marginBottom: '20px'
         }}
       >
+
+
         <TextField variant='outlined' style={{width: '90%', marginRight: '10px'}} placeholder='Titel' value={title} onChange={(e) => setTitle(e.target.value)}>Titel</TextField>
 
         <FormControl fullWidth>
@@ -339,8 +362,17 @@ function App() {
           </Select>
         </FormControl>
 
-        <Button variant='outlined' style={{width: '10%', minHeight: '56px'}} onClick={pushSend} disabled={title === ''}>Send</Button>
+        <div hidden={editMode}>
+          <Button variant='outlined' style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} onClick={pushSend} disabled={title === ''}>Send</Button>
+        </div>
+        <div hidden={!editMode}>
+          <Button variant='outlined' style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} disabled={title === ''}><AiFillCloseCircle /></Button>
+        </div>
+        <div hidden={!editMode}>
+          <Button variant='outlined' style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} disabled={title === ''}><AiOutlineSave /></Button>
+        </div>
       </div>
+        
     
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <div style={{
@@ -411,6 +443,24 @@ function App() {
               {msg.kindOfConcert}
             </div>
             
+            <Button variant='outlined' onClick={() => {
+              setEditMode(true)
+              console.log(msg)
+              setTitle(msg.title)
+              setMessage(msg?.message)
+              setKindOfConcert(msg?.kindOfConcert)
+              setProgrammOfConcert(msg?.programmOfConcert)
+              setClothesOfConcert(msg?.clothesOfConcert)
+              setAdditionalThingsForConcert(msg?.additionalThingsForConcert)
+              setStandingConcert(msg?.standingConcert)
+              setDate(dayjs(msg.date))
+              setMilitaryReception(msg?.militaryReception)
+              setListOfProgramm(msg?.listOfProgramm === undefined ? [] : msg.listOfProgramm)
+
+            }}>
+              <AiTwotoneEdit/>
+            </Button>
+
             <Button variant='outlined' onClick={() => {
               remove(ref(db, `/${msg.uuid}`));
             }}>
