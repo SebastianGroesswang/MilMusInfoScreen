@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import UploadRoadster from "./components/UploadRoadster";
 
 const getTextDecoration = (value) => {
   return dayjs().isAfter(dayjs(value.date, "MM-DD-YYYY")) && dayjs().date() != dayjs(value.date, "MM-DD-YYYY").date() ? "line-through" : "none"
@@ -34,14 +35,22 @@ function App() {
   const [whiteBelt, setWhiteBelt] = useState(false);
   const [date, setDate] = useState(dayjs());
   const [editMode, setEditMode] = useState(false);
-
-  const writeMessage = () => {
+  const [recentUid, setRecentUid] = useState("");
+  
+  const writeMessage = (isUpdate) => {
     console.log('test')
-    const uuid = uid();
+
+    const createduid = uid();
+    var uuid
+    if(isUpdate){
+      uuid = recentUid;
+    } else {
+      uuid = createduid
+    }
 
     switch(kindOfConcert){
       case 'Konzert':
-        set(ref(db, `/${uuid}`), {
+        set(ref(db, `/infos/${uuid}`), {
           title,
           date : date.format("MM-DD-YYYY"),
           kindOfConcert,
@@ -56,7 +65,7 @@ function App() {
         });
         return
       case 'Militärische Ausrückung':
-        set(ref(db, `/${uuid}`), {
+        set(ref(db, `/infos/${uuid}`), {
           title,
           date : date.format("MM-DD-YYYY"),
           kindOfConcert,
@@ -71,7 +80,7 @@ function App() {
         return
       default:
 
-        set(ref(db, `/${uuid}`), {
+        set(ref(db, `/infos/${uuid}`), {
           title,
           date : date.format("MM-DD-YYYY"),
           kindOfConcert,
@@ -91,26 +100,19 @@ function App() {
     setProgrammOfConcert('')
     setListOfProgramm([])
     setDate(dayjs())
+    setRecentUid("")
   }
 
   const pushSend = () => {
     console.log('fdasfd')
-    writeMessage();
+    writeMessage(false);
 
     resetFields()
 
     if(messageList.length > 10){
       var msg = messageList.sort((a,b) => a.postedOn > b.postedOn ? 1 : -1)[0]
-      remove(ref(db, `/${msg.uuid}`));
+      remove(ref(db, `/infos/${msg.uuid}`));
     }
-  }
-
-  const pushSave = (id) => {
-
-  }
-
-  const pushCancel = () => {
-
   }
 
   const handleSelectChange = (event) => {
@@ -299,14 +301,18 @@ function App() {
 
   useEffect(() => {
     
-    onValue(ref(db), snapshot => {
+    onValue(ref(db, `/infos/`), snapshot => {
       setMessageList([])
       const data = snapshot.val();
+      console.log(data)
 
       if(data !== null){
+        console.log(messageList)
         Object.values(data).map(msg => {
           setMessageList((oldArr) => [...oldArr, msg])
         })
+
+        console.log(messageList)
       }
     })
   }, [])
@@ -328,10 +334,14 @@ function App() {
         marginBottom: '20px'
         }}
       >
-        Test
+        <UploadRoadster uploadUrl={ (url) => {
+          set(ref(db, `/roadster/dp`), {
+            downloadUrl: url
+          });
+        }}/>
 
       </div>
-
+      <hr/>
       <div style={{
         display:'flex',
         alignItems:'center',
@@ -354,6 +364,7 @@ function App() {
             label='Art der Ausrückung'
             value={kindOfConcert}
             onChange={handleSelectChange}
+            disabled={editMode}
           >
             <MenuItem value={'Info'}>Info</MenuItem>
             <MenuItem value={'Konzert'}>Konzert</MenuItem>
@@ -366,10 +377,31 @@ function App() {
           <Button variant='outlined' style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} onClick={pushSend} disabled={title === ''}>Send</Button>
         </div>
         <div hidden={!editMode}>
-          <Button variant='outlined' style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} disabled={title === ''}><AiFillCloseCircle /></Button>
+          <Button 
+            variant='outlined' 
+            style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} 
+            disabled={title === ''}
+            onClick={() => {
+              resetFields();
+              setEditMode(!editMode)
+            }}
+          >
+            <AiFillCloseCircle />
+          </Button>
         </div>
         <div hidden={!editMode}>
-          <Button variant='outlined' style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} disabled={title === ''}><AiOutlineSave /></Button>
+          <Button 
+            variant='outlined' 
+            style={{marginLeft: '10px', width: '10%', minHeight: '56px'}} 
+            disabled={title === ''}
+            onClick={() => {
+              writeMessage(true);
+              resetFields();
+              setEditMode(!editMode)
+            }}
+          >
+            <AiOutlineSave />
+          </Button>
         </div>
       </div>
         
@@ -445,7 +477,6 @@ function App() {
             
             <Button variant='outlined' onClick={() => {
               setEditMode(true)
-              console.log(msg)
               setTitle(msg.title)
               setMessage(msg?.message)
               setKindOfConcert(msg?.kindOfConcert)
@@ -456,13 +487,13 @@ function App() {
               setDate(dayjs(msg.date))
               setMilitaryReception(msg?.militaryReception)
               setListOfProgramm(msg?.listOfProgramm === undefined ? [] : msg.listOfProgramm)
-
+              setRecentUid(msg.uuid)
             }}>
               <AiTwotoneEdit/>
             </Button>
 
             <Button variant='outlined' onClick={() => {
-              remove(ref(db, `/${msg.uuid}`));
+              remove(ref(db, `/infos/${msg.uuid}`));
             }}>
               <AiFillDelete/>
             </Button>
